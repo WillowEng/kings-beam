@@ -1,0 +1,30 @@
+# Local environment values; commit placeholder-only examples if needed.
+.env
+.env.*
+!.env.example
+!.env.*.example
+.envrc
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+!.dev.vars.*.example
+
+# Credentials, private keys, generated secrets, and secret dumps.
+.secrets/
+secrets/
+secret-dumps/
+credentials.json
+credentials.*.json
+secrets.json
+secrets.*.json
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Local dependency, build, test, and Worker runtime output.
+node_modules/
+.wrangler/
+dist/
+coverage/
+*.log
