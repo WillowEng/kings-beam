@@ -1,0 +1,5 @@
+# Documentation only: this file is not loaded as local credentials.
+# The scaffold needs no credentials. Do not create real local secrets for Step 2.
+# Future server-side variable names (nonfunctional placeholders):
+BALLDONTLIE_API_KEY="REPLACE_WITH_AUTHORIZED_LOCAL_SECRET"
+ODDS_API_KEY="REPLACE_WITH_AUTHORIZED_LOCAL_SECRET"

@@ -1,0 +1,26 @@
+# Local scaffold only: no routes, D1 bindings, secrets, or Cron triggers.
+# Remote bindings and any deployment require separate owner approval.
+name = "kings-beam-local"
+main = "src/index.ts"
+compatibility_date = "2026-10-21"
+workers_dev = false
+preview_urls = false
+
+[vars]
+APP_ENV = "test"
+
+[env.production]
+name = "kings-beam-prod"
+workers_dev = false
+preview_urls = false
+
+[env.production.vars]
+APP_ENV = "production"
+
+[env.test]
+name = "kings-beam-test"
+workers_dev = false
+preview_urls = false
+
+[env.test.vars]
+APP_ENV = "test"

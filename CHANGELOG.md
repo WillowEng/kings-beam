@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Step 2 local scaffolding
+
+- Added a strict TypeScript Worker entry point, Wrangler configuration, locked development dependencies, and Vitest tests with global HTTP fetch blocked.
+- Added separate production/TEST configuration structures without remote bindings, Cron triggers, or exposed admin routes. Production status is an explicit unavailable error; TEST status remains inaccessible.
+- Reserved core, providers, data, admin, monitoring, fixture, integration, and isolation directories without implementing those features.
+- Documented local installation, type-checking, dry-run builds, tests, configuration boundaries, and placeholder-only secret examples. Added an ignored project-local npm cache.
+- No approved specification requirements were changed. No planning-conversation handoff was added.
+
 ## v2.1 — 2026-10-21
 
 - Added `SPECIFICATION.md` from the authoritative v2.1 specification, superseding v2.0. Preserved its requirements and recorded the two owner-approved clarifications below in the relevant sections.
