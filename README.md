@@ -1,110 +1,82 @@
 # kings-beam
 
-Kings Beam API reports a calculated fan indicator, not the physical Beam's measured
-state. [Specification v2.1](SPECIFICATION.md) defines the approved requirements.
+A calculated Sacramento Kings fan indicator, not a sensor for the physical Beam.
+[Specification v2.1](SPECIFICATION.md) remains authoritative. Milestone 1 implements
+and tests the core locally; no application has been deployed.
 
-## Current scope
+## Local setup
 
-Steps 2 and 3 provide a local TypeScript/Cloudflare Workers scaffold and test
-foundation. The application has no Beam
-calculation, eligibility rules, provider adapters, database bindings, scheduled
-handler, active Cron triggers, authentication implementation, or remote services.
-No application has been deployed.
-
-- Local production `GET /status.json` returns HTTP 503 with
-  `{"error":"not_initialized","message":"Beam status is not available in this scaffold."}`.
-  It does not return fabricated Beam state.
-- TEST status, admin paths, unknown routes, and unsupported methods return 404.
-  TEST remains inaccessible until private access is implemented.
-- All responses use `Cache-Control: no-store`. Public CORS is limited to the
-  production status GET placeholder.
-
-## Local setup and validation
-
-Use Node.js 24 and npm. Install the exact locked dependency tree:
+Use Node.js 24 and npm. No credentials are needed.
 
 ```sh
 npm ci --ignore-scripts --no-audit
 npm run check
-```
-
-Individual commands:
-
-```sh
-npm run typecheck
-npm run build
-npm test
-```
-
-`build` bundles both named environments using Wrangler `deploy --dry-run`; it
-does not upload or deploy anything. Artifacts go to ignored `dist/production` and
-`dist/test`. No deployment script is provided. npm's cache is kept in ignored
-`.cache/npm`; Wrangler config/logs stay in ignored `.wrangler` and telemetry is
-disabled in the scripts. Miniflare's optional remote `Request.cf` metadata fetch
-is also disabled with `CLOUDFLARE_CF_FETCH_ENABLED=false`; the local runtime uses
-placeholder metadata. Commands use POSIX shell environment assignments.
-
-Tests run the handler with Node's Web APIs. Test setup blocks global `fetch` and
-Node HTTP(S)/TCP/TLS access unless an explicit in-memory HTTP mock handles the
-request. Unexpected access fails cleanup even if its immediate error was caught.
-Clock/DST scenarios, sanitized provider fixtures, monitoring doubles, and
-credential-output checks are described in [the testing guide](test/README.md).
-These tests need no provider keys or live services. They do not yet validate D1,
-Access, actual provider adapters, or a deployed Worker runtime.
-
-## Local development
-
-```sh
-npm run dev
-# Or exercise the production placeholder locally:
+npm run db:local:production
+npm run db:local:test
 npm run dev:production
 ```
 
-Both commands use Wrangler `--local`, bind only to `127.0.0.1`, and start no
-background schedule. Stop the local server with Ctrl-C. Never use `--remote` for
-this step.
+The database commands apply versioned migrations and initialize **local-only**
+identity/settings/team data. They are repeatable and contain no remote mode.
+Development binds to loopback. Production-shaped reads use the local production
+D1; `npm run dev` selects the separate, private TEST configuration. Stop with Ctrl-C.
 
-## Configuration boundaries
+`npm run check` runs TypeScript checking, two Wrangler `deploy --dry-run` builds,
+Vitest, and an actual workerd/local-D1 smoke test. Dry runs do not deploy or upload.
+Standalone commands are `npm run typecheck`, `npm run build`, `npm test`, and
+`npm run test:runtime` (requires fresh builds). The runtime test rejects stale bundles.
 
-`wrangler.toml` has separate `production` and `test` names and `APP_ENV` values.
-The default environment is TEST. All environments have public workers.dev and
-preview URLs disabled. There are no account/database identifiers, D1 bindings,
-routes, service bindings, or Cron triggers. Missing or unexpected `APP_ENV` does
-not expose a production status response.
+## Implemented core
 
-`.dev.vars.example` contains nonfunctional placeholders for future use. It is not
-loaded as a secret file; the scaffold needs no credentials. Do not populate real
-credentials during this step. Local `.dev.vars` and environment variants are
-ignored; Codex network secrets are not automatically Worker secrets.
+- Runtime-validated BALLDONTLIE and Odds scores adapters with explicitly injected
+  transports, bounded response bodies/timeouts, safe errors and required budgets.
+  No live transport or real keys are installed or called by the Worker.
+- Seven exclusive eligibility categories and independent persisted switches, defaults,
+  source enable/priority settings, strict/provisional policy and optimistic revisions.
+- Canonical team aliases/game mappings, cached classification provenance, provisional
+  publication, dual score agreement and disputed-support withdrawal.
+- Pacific midnight/DST, conservative completion-date bounds, recorded completion
+  resolution, manual overrides, AUTO and persistent manual-only state.
+- Local D1 schema, append-only observations/audits, compact transactional read
+  projection, coverage/failure records, incident/outbox transitions and quota counters.
+- Public `GET /status.json`: stored data only, no upstream calls or writes. Missing
+  D1/schema/identity returns sanitized 503; initialized empty history returns honest
+  OFF/unverified/null history. See [the JSON contract](docs/public-api.md).
 
-## Structure
+Admin paths and TEST HTTP status remain 404 until authenticated interfaces are
+implemented. There is no scheduled handler or Cron configuration. Internal mutation
+methods are not public endpoints and must later sit behind authenticated owner control.
+
+## Layout
 
 ```text
 src/
-  index.ts             # fail-closed HTTP entry point
-  config.ts            # environment type only
-  core/                # reserved for business logic
-  providers/           # reserved for the two approved adapters
-  data/                # reserved for database access
-  admin/               # reserved for private administration
-  monitoring/          # reserved for heartbeat and incidents
-test/
-  README.md            # helper/fixture provenance and limitations
-  setup.ts             # network and captured-console guards
-  support/             # clock, HTTP, monitoring and diagnostics doubles
-  unit/scaffold.test.ts
-  unit/                # helper behavior tests
-  fixtures/            # synthetic scenarios and reduced Stage A evidence
-  integration/         # in-memory fixture/HTTP tests
-  isolation/           # harness separation and credential-output tests
+  index.ts, config.ts
+  core/          # models, eligibility, matching, reconciliation, clock, Beam, checks
+  providers/     # validated adapters and bounded injected requests
+  data/db.ts     # scope-checked D1 persistence and internal commands
+  admin/         # reserved; no exposed interface
+  monitoring/    # reserved; no live delivery
+migrations/      # versioned local schema and transactional read projection
+scripts/         # local-only DB setup and runtime smoke-test runner
+wrangler.toml    # no remote bindings, routes or triggers
+wrangler.local.toml # separate local D1 placeholder identifiers
+test/           # fixtures, helpers, unit/integration/isolation/runtime checks
+docs/           # JSON contract and local operations/limitations
 ```
 
-Reserved application directories are retained with `.gitkeep`; they contain no implementations.
-No planning-conversation `PROJECT_HANDOFF.md` has been copied into the repository.
+Read [local development and boundaries](docs/local-development.md) and
+[the testing guide](test/README.md). No planning-conversation handoff was copied.
 
-## Approval boundary
+## Secrets and approval boundary
 
-Further business logic, provider integrations, database migrations, and live tests
-belong to later authorized steps. Commits/pushes, remote setup, real credentials,
-Access activation, monitoring, Cron, and deployments require their respective
-owner approvals. No paid features or trials are configured.
+The example secret file contains placeholders only. Actual environment files,
+cache, `.wrangler`, dependencies and build outputs are ignored. Provider URLs with
+query credentials must never be logged; adapters return fixed error categories,
+not raw transport exceptions. Public responses expose no scores, raw feeds or identities.
+
+This milestone uses mocked providers and local databases only. Live polling, quota
+period confirmation, complete schedule/recovery orchestration, authenticated dashboard,
+notification delivery, Access, Worker secrets and remote setup remain later work.
+No pushes, deployments, external account changes, paid features, or further milestones
+are authorized by the local development commands.

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — Milestone 1 working local Beam API
+
+- Implemented validated BDL/Odds adapters with injected transports, timeout/body bounds, secret-safe errors, explicit budgets and independent source checks. No live requests were made.
+- Added seven exclusive eligibility categories, persisted/revisioned settings, canonical game matching, classification provenance, provisional/dual publication and disputed-support withdrawal.
+- Added Pacific/DST expiration, uncertain completion dates, audited completion resolution, overrides/AUTO/manual-only and freshness-aware public JSON.
+- Added three versioned local D1 migrations, scope checks, normalized observation/audit history, compact transactional read projection, incident/outbox transitions and conservative quota enforcement.
+- Added offline core/provider/SQL integration tests and an actual workerd/local-D1 harness; local production/TEST migration and initialization commands are repeatable. Admin/TEST HTTP remain closed; no Cron is activated.
+- Documented the public JSON contract, local operations, scope/security boundaries and remaining live/operational validation gates. Specification v2.1 is unchanged; no planning handoff was added.
+
 ## Unreleased — Step 3 automated testing foundation
 
 - Added fixed UTC clocks, Pacific midnight/DST scenarios and timer cleanup without Beam-expiration logic.

@@ -8,19 +8,24 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "dev": "XDG_CONFIG_HOME=$PWD/.wrangler/config CLOUDFLARE_CF_FETCH_ENABLED=false WRANGLER_SEND_METRICS=false WRANGLER_LOG_PATH=.wrangler/logs wrangler dev --local --env test --ip 127.0.0.1",
-    "dev:production": "XDG_CONFIG_HOME=$PWD/.wrangler/config CLOUDFLARE_CF_FETCH_ENABLED=false WRANGLER_SEND_METRICS=false WRANGLER_LOG_PATH=.wrangler/logs wrangler dev --local --env production --ip 127.0.0.1",
+    "dev": "XDG_CONFIG_HOME=$PWD/.wrangler/config CLOUDFLARE_CF_FETCH_ENABLED=false WRANGLER_SEND_METRICS=false WRANGLER_LOG_PATH=.wrangler/logs wrangler dev --config wrangler.local.toml --local --env test --ip 127.0.0.1",
+    "dev:production": "XDG_CONFIG_HOME=$PWD/.wrangler/config CLOUDFLARE_CF_FETCH_ENABLED=false WRANGLER_SEND_METRICS=false WRANGLER_LOG_PATH=.wrangler/logs wrangler dev --config wrangler.local.toml --local --env production --ip 127.0.0.1",
     "build": "npm run build:production && npm run build:test",
     "build:production": "XDG_CONFIG_HOME=$PWD/.wrangler/config CLOUDFLARE_CF_FETCH_ENABLED=false WRANGLER_SEND_METRICS=false WRANGLER_LOG_PATH=.wrangler/logs wrangler deploy --dry-run --env production --outdir dist/production",
     "build:test": "XDG_CONFIG_HOME=$PWD/.wrangler/config CLOUDFLARE_CF_FETCH_ENABLED=false WRANGLER_SEND_METRICS=false WRANGLER_LOG_PATH=.wrangler/logs wrangler deploy --dry-run --env test --outdir dist/test",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run build && npm test"
+    "check": "npm run typecheck && npm run build && npm test && npm run test:runtime",
+    "test:runtime": "node scripts/runtime-test.mjs",
+    "db:local:production": "node scripts/local-db.mjs production",
+    "db:local:test": "node scripts/local-db.mjs test"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261021.1",
     "@types/node": "24.19.2",
+    "esbuild": "0.28.2",
+    "miniflare": "5.20261019.1-beta",
     "typescript": "7.0.2",
     "vitest": "5.0.5",
     "wrangler": "4.151.3"

@@ -1,0 +1,36 @@
+# LOCAL ONLY. These placeholder UUIDs do not refer to Cloudflare accounts/databases.
+# Use only with --local or deploy --dry-run. No routes or Cron.
+name = "kings-beam-local"
+main = "src/index.ts"
+compatibility_date = "2026-10-21"
+workers_dev = false
+preview_urls = false
+[vars]
+APP_ENV = "test"
+[[d1_databases]]
+binding = "DB"
+database_name = "kings-beam-local-test"
+database_id = "00000000-0000-0000-0000-000000000002"
+migrations_dir = "migrations"
+[env.production]
+name = "kings-beam-local-production"
+workers_dev = false
+preview_urls = false
+[env.production.vars]
+APP_ENV = "production"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "kings-beam-local-production"
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "migrations"
+[env.test]
+name = "kings-beam-local-test"
+workers_dev = false
+preview_urls = false
+[env.test.vars]
+APP_ENV = "test"
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "kings-beam-local-test"
+database_id = "00000000-0000-0000-0000-000000000002"
+migrations_dir = "migrations"

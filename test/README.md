@@ -1,9 +1,10 @@
 # Local automated testing foundation
 
-All helpers and fixtures here are test-only. They implement no Beam calculation,
-eligibility decisions, provider adapters, database connections, or delivery service.
+Helpers and fixtures here are test-only. Milestone 1 tests now exercise the actual
+core/provider implementations and SQL persistence; no live provider or delivery service is used.
 Run `npm test` for tests or `npm run check` for type-checking, both Wrangler dry-run
-builds, and tests. No credentials or provider requests are needed.
+builds, tests, and a separate real workerd/local-D1 smoke harness. No real credentials
+or provider requests are needed.
 
 ## Organization
 
@@ -28,7 +29,12 @@ builds, and tests. No credentials or provider requests are needed.
   recorder that accepts only known provider/outcome codes and HTTP status, and a
   sensitive-output assertion whose errors do not echo leaked text.
 - `unit/`: utilities and the unchanged Step 2 scaffold tests.
-- `integration/`: fixture/transport integration, not live provider or D1 tests.
+- `support/database.ts`: Node SQLite executes the actual migrations behind the
+  repository's D1 surface, with atomic rollback and simulated write failures.
+- `integration/`: mocked provider/core/SQL/status integration; no external services.
+- `runtime/`: actual workerd/local-D1 compatibility and scope/rollback checks via
+  `npm run test:runtime` after fresh Wrangler builds. Miniflare uses local loopback;
+  Worker outbound is denied and zero outbound requests are asserted.
 - `isolation/`: credential-output checks and independent fixture, diagnostic and
   monitoring instances. These are not proof of deployed Worker/D1 isolation.
 
