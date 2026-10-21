@@ -106,3 +106,10 @@ describe("bounded injected provider requests", () => {
     }
   });
 });
+
+it("rejects an upstream credential echo before it can reach observations or diagnostics", async () => {
+  const output = await fetchOddsApi({ transport: async () => Response.json([{ id: SYNTHETIC_CREDENTIALS.odds }]), budget: budget(), apiKey: SYNTHETIC_CREDENTIALS.odds, observedAt: NOW });
+  expect(output.errors).toEqual(["invalid_response"]);
+  expect(output.observations).toEqual([]);
+  expect(JSON.stringify(output)).not.toContain(SYNTHETIC_CREDENTIALS.odds);
+});

@@ -55,6 +55,7 @@ export interface Coverage {
 export interface Override { mode: "AUTO" | "FORCE_ON" | "FORCE_OFF"; createdAt: string; expiresAt: string | null }
 export interface Snapshot {
   team: string; settings: Settings; games: Game[]; coverage: Coverage[];
+  historyGaps?: Array<{ start: string; end: string }>;
   override: Override | null; failedSources: Provider[]; unmatchedRelevant?: boolean; checkedAt: string | null;
 }
 export interface PublicStatus {

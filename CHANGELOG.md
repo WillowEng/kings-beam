@@ -1,5 +1,19 @@
 # Changelog
 
+## Milestone 2 — Reliability and Controls (local, inactive)
+
+- Added durable scheduled decisions, cursor/interval recovery, expiring leases,
+  source backoff, quota reserve partitions and provider credit-header reconciliation.
+- Added closed-by-default owner dashboard, signed Access JWT/owner checks, exact host,
+  origin/CSRF/confirmation controls, audited settings and rate-limited diagnostic commands.
+- Added isolated TEST team controls and pure synthetic PASS/FAIL scenarios; preserved
+  current-day verification scope and withheld historical last_win across newer gaps.
+- Added independent heartbeat and retrying incident/recovery email outbox adapters,
+  with optional inactive free Email Routing binding; no account changes or real sends.
+- Added offline security/reliability regressions and operational/security/runbook docs.
+  Specification v2.1 and both Wrangler configurations remain unchanged. Activation,
+  deployment and pushing this milestone still require explicit owner approval.
+
 ## Unreleased — Milestone 1 working local Beam API
 
 - Implemented validated BDL/Odds adapters with injected transports, timeout/body bounds, secret-safe errors, explicit budgets and independent source checks. No live requests were made.

@@ -1,7 +1,7 @@
 # Local automated testing foundation
 
-Helpers and fixtures here are test-only. Milestone 1 tests now exercise the actual
-core/provider implementations and SQL persistence; no live provider or delivery service is used.
+Helpers and fixtures here are test-only. Tests exercise actual core, provider,
+operational, admin, monitoring and SQL implementations; no live provider or delivery service is used.
 Run `npm test` for tests or `npm run check` for type-checking, both Wrangler dry-run
 builds, tests, and a separate real workerd/local-D1 smoke harness. No real credentials
 or provider requests are needed.
@@ -28,10 +28,14 @@ or provider requests are needed.
 - `support/diagnostics.ts`: synthetic credentials, a deliberately narrow diagnostic
   recorder that accepts only known provider/outcome codes and HTTP status, and a
   sensitive-output assertion whose errors do not echo leaked text.
-- `unit/`: utilities and the unchanged Step 2 scaffold tests.
+- `unit/`: core/providers/utilities and real WebCrypto RS256 verification. The original
+  scaffold checks remain, with background inactivity now checked through the runtime gate.
 - `support/database.ts`: Node SQLite executes the actual migrations behind the
   repository's D1 surface, with atomic rollback and simulated write failures.
-- `integration/`: mocked provider/core/SQL/status integration; no external services.
+- `integration/`: mocked provider/core/SQL/status integration plus durable scheduling,
+  quotas, recovery, owner controls, CSRF, outbox retries and TEST isolation; no external services.
+- `support/auth.ts`: ephemeral in-memory RSA signing keys and synthetic owner claims;
+  no key material or tokens are persisted. This is not evidence of configured Access.
 - `runtime/`: actual workerd/local-D1 compatibility and scope/rollback checks via
   `npm run test:runtime` after fresh Wrangler builds. Miniflare uses local loopback;
   Worker outbound is denied and zero outbound requests are asserted.
@@ -52,6 +56,6 @@ Tests cover plain and encoded secret text, URLs, headers, error messages and inv
 diagnostic fields. Intentional leak-detection tests call the assertion directly,
 without printing unsafe text. Never populate these fixtures with real credentials.
 
-Production logging does not exist yet. Its eventual implementation must be wired
-to these checks; passing tests of this test-only recorder do not prove a future
-logger safe. No test invokes live services or consumes API credits.
+Application paths return fixed error categories and never log raw exceptions or URLs.
+Credential-echo responses are rejected before persistence. Passing these tests does
+not establish future logger safety or deployed authentication. No test invokes live services or consumes API credits.

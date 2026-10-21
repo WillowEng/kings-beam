@@ -155,3 +155,16 @@ describe("canonical matching", () => {
     expect(matchGame(odds({ scheduledStartAt: "2026-10-23T02:30:00.000Z" }), [game()])).toBeNull();
   });
 });
+
+it("holds last_win unknown when a newer recovery interval could contain a later win", () => {
+  const old = game([observation({ scheduledStartAt: "2026-10-20T02:00:00.000Z", observedAt: "2026-10-20T05:00:00.000Z" })], { scheduledStartAt: "2026-10-20T02:00:00.000Z" });
+  const input = snapshot([old], { historyGaps: [{ start: "2026-10-20", end: "2026-10-21" }] });
+  expect(calculateStatus(input, NOW).last_win).toBeNull();
+  expect(calculateStatus({ ...input, games: [old, game()] }, NOW).last_win).toBe("2026-10-21");
+});
+
+it("distinguishes historical recovery gaps from unresolved gaps affecting the current day", () => {
+  const input = snapshot([game([observation(), odds()])], { historyGaps: [{ start: "2026-10-01", end: "2026-10-19" }] });
+  expect(calculateStatus(input, NOW).verified).toBe(true);
+  expect(calculateStatus({ ...input, historyGaps: [{ start: "2026-10-20", end: "2026-10-21" }] }, NOW).verified).toBe(false);
+});

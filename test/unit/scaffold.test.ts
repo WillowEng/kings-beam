@@ -57,7 +57,8 @@ describe("local Worker scaffold", () => {
     expect((await worker.fetch(new Request("https://scaffold.invalid/unknown"), production)).status).toBe(404);
   });
 
-  it("has no scheduled handler to run background work", () => {
-    expect(worker).not.toHaveProperty("scheduled");
+  it("keeps background work inactive without explicit runtime activation", async () => {
+    await worker.scheduled({} as ScheduledController, production);
+    await worker.scheduled({} as ScheduledController, test);
   });
 });

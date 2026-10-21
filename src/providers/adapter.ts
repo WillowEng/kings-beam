@@ -2,7 +2,7 @@ import type { Observation, Provider } from "../core/models";
 import { instant } from "../core/time";
 export type Transport = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 export type ErrorCode = "http_error" | "rate_limited" | "invalid_response" | "invalid_record" | "timeout" | "network_error" | "budget_exhausted" | "disabled";
-export interface AdapterResult { provider: Provider; observations: Observation[]; errors: ErrorCode[]; nextCursor: string | null; credits: number | null; retryAfterSeconds: number | null }
+export interface AdapterResult { provider: Provider; observations: Observation[]; errors: ErrorCode[]; nextCursor: string | null; credits: number | null; retryAfterSeconds: number | null; accountUsed?: number; accountRemaining?: number }
 export function result(provider: Provider): AdapterResult { return { provider, observations: [], errors: [], nextCursor: null, credits: null, retryAfterSeconds: null }; }
 export function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid_record");
@@ -29,6 +29,10 @@ export async function requestJson(provider: Provider, url: URL, headers: Record<
   try {
     const response = await transport(url, { headers, signal: controller.signal, redirect: "error" });
     received = true;
+    for (const [header, field] of [["x-requests-used", "accountUsed"], ["x-requests-remaining", "accountRemaining"]] as const) {
+      const value = response.headers.get(header);
+      if (value && /^\d+$/.test(value) && Number.isSafeInteger(Number(value))) output[field] = Number(value);
+    }
     const cost = response.headers.get("x-requests-last");
     if (provider === "odds_api" && cost && /^\d+$/.test(cost)) {
       output.credits = Number(cost);
@@ -51,7 +55,13 @@ export async function requestJson(provider: Provider, url: URL, headers: Record<
       text += decoder.decode(part.value, { stream: true });
     }
     text += decoder.decode();
-    try { return { output, body: JSON.parse(text) as unknown }; }
+    try {
+      const body = JSON.parse(text) as unknown;
+      const normalized = JSON.stringify(body);
+      const secrets = [url.searchParams.get("apiKey"), headers.Authorization].filter((v): v is string => typeof v === "string" && v.length >= 8);
+      if (secrets.some(secret => [secret, encodeURIComponent(secret)].some(value => normalized.includes(value)))) throw new Error("credential_echo");
+      return { output, body };
+    }
     catch { output.errors.push("invalid_response"); return { output, body: null }; }
   } catch {
     output.errors.push(controller.signal.aborted ? "timeout" : received ? "invalid_response" : "network_error");

@@ -1,0 +1,15 @@
+CREATE TABLE operational_settings (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL DEFAULT 0, value TEXT NOT NULL CHECK(json_valid(value)), command TEXT);
+CREATE TABLE job_leases (name TEXT PRIMARY KEY, token TEXT NOT NULL, expires_at TEXT NOT NULL);
+CREATE TABLE schedule_sync (id TEXT PRIMARY KEY, query_type TEXT NOT NULL, start_day TEXT NOT NULL, end_day TEXT NOT NULL, cursor TEXT, next_at TEXT NOT NULL, completed_at TEXT, failures INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE recovery_checkpoints (id INTEGER PRIMARY KEY CHECK(id=1), next_day TEXT NOT NULL, through_day TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE provider_health (provider TEXT PRIMARY KEY, team TEXT NOT NULL, attempted_at TEXT NOT NULL, succeeded_at TEXT, latency_ms INTEGER, outcome TEXT NOT NULL, next_at TEXT NOT NULL, failures INTEGER NOT NULL DEFAULT 0, credits_used INTEGER, credits_remaining INTEGER);
+CREATE TABLE game_checks (game_id TEXT PRIMARY KEY REFERENCES games(id), primary_at TEXT, primary_final_at TEXT, secondary_at TEXT, secondary_attempts INTEGER NOT NULL DEFAULT 0, first_final_at TEXT);
+CREATE TABLE runtime_health (id INTEGER PRIMARY KEY CHECK(id=1), last_started TEXT, last_completed TEXT, last_outcome TEXT);
+CREATE TABLE admin_commands (id TEXT PRIMARY KEY, action TEXT NOT NULL, actor TEXT NOT NULL, at TEXT NOT NULL, outcome TEXT NOT NULL);
+CREATE TABLE csrf_nonces (hash TEXT PRIMARY KEY, subject TEXT NOT NULL, expires_at TEXT NOT NULL, consumed_at TEXT);
+ALTER TABLE incidents ADD COLUMN acknowledged_at TEXT;
+ALTER TABLE incidents ADD COLUMN acknowledged_by TEXT;
+ALTER TABLE notification_outbox ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE notification_outbox ADD COLUMN next_at TEXT;
+CREATE INDEX outbox_due ON notification_outbox(delivered_at,next_at);
+CREATE TABLE quota_reserves (purpose TEXT NOT NULL CHECK(purpose IN ('recovery','diagnostics','emergency')), period_start TEXT NOT NULL, period_end TEXT NOT NULL, cap INTEGER NOT NULL, used INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(purpose,period_start));

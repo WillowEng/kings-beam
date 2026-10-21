@@ -32,5 +32,7 @@ export async function fetchOddsApi(options: { transport: Transport; budget: Requ
   url.search = new URLSearchParams({ apiKey: options.apiKey, daysFrom: String(options.daysFrom ?? 3), dateFormat: "iso" }).toString();
   const response = await requestJson("odds_api", url, {}, options.transport, options.budget, options.observedAt, options.timeoutMs);
   if (response.output.errors.length) return response.output;
-  return { ...parseOddsApi(response.body, options.observedAt), credits: response.output.credits };
+  return { ...parseOddsApi(response.body, options.observedAt), credits: response.output.credits, retryAfterSeconds: response.output.retryAfterSeconds,
+    ...(response.output.accountUsed !== undefined ? { accountUsed: response.output.accountUsed } : {}),
+    ...(response.output.accountRemaining !== undefined ? { accountRemaining: response.output.accountRemaining } : {}) };
 }

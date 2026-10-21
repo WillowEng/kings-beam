@@ -10,7 +10,14 @@ export function calculateStatus(snapshot: Snapshot, at: string): PublicStatus {
   const dated = wins.filter(d => d.day && d.day <= today).sort((a, b) => b.day!.localeCompare(a.day!));
   const latest = dated[0];
   const uncertainNewerWin = wins.some(d => !d.day && (!latest || !d.game.scheduledStartAt || pacificDate(d.game.scheduledStartAt) >= latest.day!));
-  const lastWin = uncertainNewerWin ? null : latest?.day ?? null;
+  const pendingCouldBeNewer = latest?.day !== today && decisions.some(d => {
+    if (d.final || (d.competition !== "unknown" && !settings.eligibility[d.competition])) return false;
+    if (d.game.scheduledStartAt && d.game.scheduledStartAt > now) return false;
+    if (d.game.observations.length && d.game.observations.every(o => ["canceled", "postponed"].includes(o.lifecycle))) return false;
+    return !d.firstFinalAt || !latest || pacificDate(d.firstFinalAt) > latest.day!;
+  });
+  const gapCouldBeNewer = latest && snapshot.historyGaps?.some(g => g.start <= today && g.end > latest.day!);
+  const lastWin = uncertainNewerWin || pendingCouldBeNewer || gapCouldBeNewer ? null : latest?.day ?? null;
   const support = wins.filter(d => d.day === today && (!settings.requireDualAgreementForOn || d.dual));
   const chosen = support.find(d => d.dual) ?? support[0];
   const coverage = snapshot.coverage.some(c => c.day === today && c.complete && c.checkedAt <= now && c.validUntil > now &&
@@ -26,11 +33,12 @@ export function calculateStatus(snapshot: Snapshot, at: string): PublicStatus {
     return !terminal && (!d.firstFinalAt || pacificDate(d.firstFinalAt) >= today);
   });
   const unsettled = relevant.some(d => d.disputed || d.competition === "unknown" || !d.final || !d.day || !d.dual);
+  const currentHistoryGap = snapshot.historyGaps?.some(g => g.start <= today && g.end >= today) ?? false;
   const enabledBoth = settings.enabled.balldontlie && settings.enabled.odds_api;
   const checked = snapshot.checkedAt && snapshot.checkedAt <= now ? snapshot.checkedAt : null;
   const fallback = eligible.find(d => d.final && relevant.some(r => r.game.id === d.game.id));
   const base: PublicStatus = {
-    beam_on: Boolean(chosen), verified: enabledBoth && coverage && !unsettled && !snapshot.unmatchedRelevant && !snapshot.failedSources.some(p => settings.enabled[p]),
+    beam_on: Boolean(chosen), verified: enabledBoth && coverage && !currentHistoryGap && !unsettled && !snapshot.unmatchedRelevant && !snapshot.failedSources.some(p => settings.enabled[p]),
     last_win: lastWin, mode: "auto", source: chosen?.source ?? (fallback?.source ?? "none"), checked_at: checked,
   };
   const override = snapshot.override;

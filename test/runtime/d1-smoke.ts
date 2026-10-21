@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
+import { runOperations } from "../../src/scheduled";
+import { Operations } from "../../src/operations/store";
 import { Store } from "../../src/data/db";
 import { CATEGORIES } from "../../src/core/models";
 import { pacificDate } from "../../src/core/time";
@@ -57,6 +59,12 @@ try {
     store.db.prepare("INSERT INTO table_that_does_not_exist VALUES(1)"),
   ]));
   assert.equal(await store.db.prepare("SELECT id FROM audit_log WHERE id='rollback'").first(), null);
+  const ops = new Operations(store);
+  await ops.configure({ liveTest: false, seasonActive: false, historyStart: null }, 0, "local-operations", "local-test", at);
+  const report = await runOperations(store, { at, keys: { balldontlie: "", odds_api: "" }, transport: async () => { throw new Error("No upstream calls expected"); } });
+  assert.equal(report.outcome, "complete"); assert.equal(report.checks.length, 0);
+  assert.ok(await store.db.prepare("SELECT last_completed FROM runtime_health WHERE id=1").first());
+  assert.equal((await runOperations(testStore, { at, keys: { balldontlie: "", odds_api: "" }, transport: async () => { throw new Error("TEST must be paused"); } })).outcome, "paused");
   assert.equal(outbound, 0);
-  console.log("PASS: actual workerd/local D1 migrations, parsed-fixture persistence, dual public status, scope isolation, closed admin/TEST, atomic rollback, zero Worker outbound requests.");
+  console.log("PASS: actual workerd/local D1 migrations, parsed-fixture persistence, dual public status, scope isolation, closed admin/TEST, atomic rollback, durable operational bookkeeping, paused TEST, zero Worker outbound requests.");
 } finally { await Promise.all([production.dispose(), test.dispose()]); }

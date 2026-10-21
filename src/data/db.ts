@@ -60,6 +60,8 @@ export class Store {
       this.db.prepare("SELECT value FROM coverage"), this.db.prepare("SELECT mode,created_at,expires_at FROM overrides ORDER BY revision DESC LIMIT 1"),
       this.statement("SELECT provider FROM provider_failures WHERE day=? AND checked_at<=?", today, now),
       this.db.prepare("SELECT value FROM unmatched_observations"),
+      this.db.prepare("SELECT succeeded_at FROM provider_health,app_metadata WHERE provider_health.team=app_metadata.team AND succeeded_at IS NOT NULL"),
+      this.db.prepare("SELECT next_day,through_day FROM recovery_checkpoints WHERE next_day<=through_day"),
     ]);
     const identity = data[0].results[0] as unknown as { scope: string; team: string } | undefined;
     if (!identity || identity.scope !== this.scope || !TEAMS.some(t => t.id === identity.team) || (this.scope === "production" && identity.team !== "SAC")) throw new Error("database_scope_mismatch");
@@ -81,10 +83,10 @@ export class Store {
     let unmatchedRelevant = false;
     for (const row of data[7].results) {
       const o = cleanObservation(JSON.parse(String(row.value)) as Observation);
-      if (o.observedAt <= now && pacificDate(o.observedAt) === today && (!o.scheduledStartAt || o.scheduledStartAt <= now)) unmatchedRelevant = true;
+      if ((o.home === identity.team || o.away === identity.team) && o.observedAt <= now && pacificDate(o.observedAt) === today && (!o.scheduledStartAt || o.scheduledStartAt <= now)) unmatchedRelevant = true;
     }
-    const checkedAt = [...observations.filter(o => o.observedAt <= now).map(o => o.observedAt), ...coverage.filter(c => c.complete && c.checkedAt <= now).map(c => c.checkedAt)].sort().at(-1) ?? null;
-    return { team: identity.team, settings, games, coverage, override, failedSources, unmatchedRelevant, checkedAt };
+    const checkedAt = [...data[8].results.map(r => instant(r.succeeded_at)).filter(t => t <= now), ...observations.filter(o => (o.home === identity.team || o.away === identity.team) && o.observedAt <= now).map(o => o.observedAt), ...coverage.filter(c => c.complete && c.checkedAt <= now).map(c => c.checkedAt)].sort().at(-1) ?? null;
+    return { team: identity.team, settings, games, coverage, historyGaps: data[9].results.map(r => ({ start: String(r.next_day), end: String(r.through_day) })), override, failedSources, unmatchedRelevant, checkedAt };
   }
   async ingest(input: Observation): Promise<"stored" | "unmatched" | "ignored"> {
     const identity = await this.identity(), o = cleanObservation(input);
@@ -134,7 +136,7 @@ export class Store {
     if (!safeId(key) || !/^[a-z_]{1,40}$/.test(kind)) throw new Error("invalid_incident");
     at = instant(at);
     await this.db.batch([
-      this.statement("INSERT INTO incidents(key,kind,game_id,open,generation,first_seen,last_seen) SELECT ?,?,?,?,1,?,? WHERE (? IS NULL OR EXISTS(SELECT 1 FROM game_projection WHERE game_id=? AND revision=?)) ON CONFLICT(key) DO UPDATE SET open=excluded.open,generation=incidents.generation+CASE WHEN incidents.open<>excluded.open THEN 1 ELSE 0 END,last_seen=excluded.last_seen WHERE excluded.last_seen>=incidents.last_seen", key, kind, game, open ? 1 : 0, at, at, evidence?.gameId ?? null, evidence?.gameId ?? null, evidence?.revision ?? null),
+      this.statement("INSERT INTO incidents(key,kind,game_id,open,generation,first_seen,last_seen) SELECT ?,?,?,?,1,?,? WHERE (? IS NULL OR EXISTS(SELECT 1 FROM game_projection WHERE game_id=? AND revision=?)) ON CONFLICT(key) DO UPDATE SET open=excluded.open,generation=incidents.generation+CASE WHEN incidents.open<>excluded.open THEN 1 ELSE 0 END,last_seen=excluded.last_seen,acknowledged_at=CASE WHEN incidents.open<>excluded.open THEN NULL ELSE incidents.acknowledged_at END,acknowledged_by=CASE WHEN incidents.open<>excluded.open THEN NULL ELSE incidents.acknowledged_by END WHERE excluded.last_seen>=incidents.last_seen", key, kind, game, open ? 1 : 0, at, at, evidence?.gameId ?? null, evidence?.gameId ?? null, evidence?.revision ?? null),
       this.statement("INSERT OR IGNORE INTO notification_outbox(id,incident_key,transition,created_at) SELECT key||':'||generation,key,CASE WHEN open=1 THEN 'open' ELSE 'recovery' END,? FROM incidents WHERE key=? AND (open=1 OR generation>1)", at, key),
     ]);
   }
@@ -156,7 +158,7 @@ export class Store {
     } else {
       await this.statement("DELETE FROM provider_failures WHERE provider=? AND day=? AND checked_at<=?", result.provider, day, at).run();
     }
-    await this.incident(`provider:${result.provider}:${day}`, "provider", null, result.errors.length > 0, at);
+    await this.incident(`provider:${result.provider}`, "provider", null, result.errors.length > 0, at);
   }
   private async mutate(expected: number, command: string, actor: string, at: string, value: Settings, extra: D1PreparedStatement[], action: string): Promise<void> {
     await this.identity();

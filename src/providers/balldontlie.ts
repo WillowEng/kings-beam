@@ -52,5 +52,7 @@ export async function fetchBalldontlie(options: {
   url.search = new URLSearchParams({ "team_ids[]": String(options.teamId), start_date: dates.start, end_date: dates.end, season_type: context.queryType, per_page: "100", ...(options.cursor ? { cursor: options.cursor } : {}) }).toString();
   const response = await requestJson("balldontlie", url, { Authorization: options.apiKey }, options.transport, options.budget, options.observedAt, options.timeoutMs);
   if (response.output.errors.length) return response.output;
-  return { ...parseBalldontlie(response.body, context, options.observedAt), retryAfterSeconds: response.output.retryAfterSeconds };
+  return { ...parseBalldontlie(response.body, context, options.observedAt), credits: response.output.credits, retryAfterSeconds: response.output.retryAfterSeconds,
+    ...(response.output.accountUsed !== undefined ? { accountUsed: response.output.accountUsed } : {}),
+    ...(response.output.accountRemaining !== undefined ? { accountRemaining: response.output.accountRemaining } : {}) };
 }

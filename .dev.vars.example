@@ -1,5 +1,16 @@
 # Documentation only: this file is not loaded as local credentials.
-# The scaffold needs no credentials. Do not create real local secrets for Step 2.
-# Future server-side variable names (nonfunctional placeholders):
+# Local automated checks need no credentials. Keep all activation gates closed.
+# Server-side variable names (nonfunctional placeholders):
 BALLDONTLIE_API_KEY="REPLACE_WITH_AUTHORIZED_LOCAL_SECRET"
 ODDS_API_KEY="REPLACE_WITH_AUTHORIZED_LOCAL_SECRET"
+# All activation gates remain closed. No local secrets are needed for automated tests.
+OPERATIONS_ENABLED="false"
+ADMIN_ENABLED="false"
+NOTIFICATIONS_ENABLED="false"
+# Authentication examples are deliberately nonfunctional placeholders.
+ACCESS_ISSUER="https://REPLACE_WITH_ACCESS_TEAM.cloudflareaccess.com/"
+ACCESS_AUDIENCE="REPLACE_WITH_APPROVED_ACCESS_AUDIENCE"
+ADMIN_ORIGIN="https://admin.example.invalid/"
+ADMIN_OWNERS="owner@example.invalid"
+# HEARTBEAT and sender/recipient settings must be installed privately only after approval.
+# Do not add a real ping URL or credentials to this example.

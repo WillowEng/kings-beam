@@ -1,8 +1,8 @@
 # kings-beam
 
 A calculated Sacramento Kings fan indicator, not a sensor for the physical Beam.
-[Specification v2.1](SPECIFICATION.md) remains authoritative. Milestone 1 implements
-and tests the core locally; no application has been deployed.
+[Specification v2.1](SPECIFICATION.md) remains authoritative. Milestones 1 and 2 implement
+and test the core and operational controls locally; no application has been deployed.
 
 ## Local setup
 
@@ -30,7 +30,8 @@ Standalone commands are `npm run typecheck`, `npm run build`, `npm test`, and
 
 - Runtime-validated BALLDONTLIE and Odds scores adapters with explicitly injected
   transports, bounded response bodies/timeouts, safe errors and required budgets.
-  No live transport or real keys are installed or called by the Worker.
+  Runtime transport is available only behind explicit operational/authentication gates;
+  no real keys or services are configured.
 - Seven exclusive eligibility categories and independent persisted switches, defaults,
   source enable/priority settings, strict/provisional policy and optimistic revisions.
 - Canonical team aliases/game mappings, cached classification provenance, provisional
@@ -43,20 +44,24 @@ Standalone commands are `npm run typecheck`, `npm run build`, `npm test`, and
   D1/schema/identity returns sanitized 503; initialized empty history returns honest
   OFF/unverified/null history. See [the JSON contract](docs/public-api.md).
 
-Admin paths and TEST HTTP status remain 404 until authenticated interfaces are
-implemented. There is no scheduled handler or Cron configuration. Internal mutation
-methods are not public endpoints and must later sit behind authenticated owner control.
+Milestone 2 adds durable scheduled decision-making, bounded recovery, quota partitions,
+private owner controls, signed Access JWT validation, CSRF, audit, TEST simulations,
+heartbeat and notification outbox delivery. **Admin and operational activation flags
+are absent**, so admin and TEST HTTP status remain 404 in both committed configurations.
+A scheduled handler exists, but no Cron triggers are configured. See
+[operational behavior](docs/operations.md) and [the runbook](docs/runbook.md).
 
 ## Layout
 
 ```text
 src/
-  index.ts, config.ts
+  index.ts, config.ts, scheduled.ts
   core/          # models, eligibility, matching, reconciliation, clock, Beam, checks
   providers/     # validated adapters and bounded injected requests
   data/db.ts     # scope-checked D1 persistence and internal commands
-  admin/         # reserved; no exposed interface
-  monitoring/    # reserved; no live delivery
+  admin/         # gated owner dashboard, Access validation and CSRF controls
+  operations/    # durable scans, recovery, quotas, leases and pure TEST scenarios
+  monitoring/    # optional heartbeat/email adapters and durable outbox delivery
 migrations/      # versioned local schema and transactional read projection
 scripts/         # local-only DB setup and runtime smoke-test runner
 wrangler.toml    # no remote bindings, routes or triggers
@@ -75,8 +80,9 @@ cache, `.wrangler`, dependencies and build outputs are ignored. Provider URLs wi
 query credentials must never be logged; adapters return fixed error categories,
 not raw transport exceptions. Public responses expose no scores, raw feeds or identities.
 
-This milestone uses mocked providers and local databases only. Live polling, quota
-period confirmation, complete schedule/recovery orchestration, authenticated dashboard,
-notification delivery, Access, Worker secrets and remote setup remain later work.
-No pushes, deployments, external account changes, paid features, or further milestones
-are authorized by the local development commands.
+Validation uses mocked providers, in-memory notifications, ephemeral JWT signing keys
+and local databases only. Actual provider latency/competition coverage, billing-cycle
+entitlements, Access host protection, current licensing, free email-routing eligibility
+and remote setup remain activation gates. See [security and licensing](docs/security-and-licensing.md).
+No deployment, external account change, paid feature, push or subsequent milestone
+is authorized by these development commands.
