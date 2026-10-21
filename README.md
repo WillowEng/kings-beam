@@ -5,7 +5,8 @@ state. [Specification v2.1](SPECIFICATION.md) defines the approved requirements.
 
 ## Current scope
 
-Step 2 is a local TypeScript/Cloudflare Workers scaffold. It has no Beam
+Steps 2 and 3 provide a local TypeScript/Cloudflare Workers scaffold and test
+foundation. The application has no Beam
 calculation, eligibility rules, provider adapters, database bindings, scheduled
 handler, active Cron triggers, authentication implementation, or remote services.
 No application has been deployed.
@@ -43,10 +44,13 @@ disabled in the scripts. Miniflare's optional remote `Request.cf` metadata fetch
 is also disabled with `CLOUDFLARE_CF_FETCH_ENABLED=false`; the local runtime uses
 placeholder metadata. Commands use POSIX shell environment assignments.
 
-Tests run the handler with Node's Web APIs. Test setup replaces global `fetch`
-with a throwing stub; handler tests assert that it is never called. These tests
-need no provider keys or live services. They do not yet validate D1, Access,
-provider contracts, or a deployed Worker runtime.
+Tests run the handler with Node's Web APIs. Test setup blocks global `fetch` and
+Node HTTP(S)/TCP/TLS access unless an explicit in-memory HTTP mock handles the
+request. Unexpected access fails cleanup even if its immediate error was caught.
+Clock/DST scenarios, sanitized provider fixtures, monitoring doubles, and
+credential-output checks are described in [the testing guide](test/README.md).
+These tests need no provider keys or live services. They do not yet validate D1,
+Access, actual provider adapters, or a deployed Worker runtime.
 
 ## Local development
 
@@ -85,14 +89,17 @@ src/
   admin/               # reserved for private administration
   monitoring/          # reserved for heartbeat and incidents
 test/
-  setup.ts             # blocks global HTTP fetch in tests
+  README.md            # helper/fixture provenance and limitations
+  setup.ts             # network and captured-console guards
+  support/             # clock, HTTP, monitoring and diagnostics doubles
   unit/scaffold.test.ts
-  fixtures/            # reserved for sanitized data
-  integration/         # reserved for integration tests
-  isolation/           # reserved for isolation tests
+  unit/                # helper behavior tests
+  fixtures/            # synthetic scenarios and reduced Stage A evidence
+  integration/         # in-memory fixture/HTTP tests
+  isolation/           # harness separation and credential-output tests
 ```
 
-Empty directories are retained with `.gitkeep`; they contain no implementations.
+Reserved application directories are retained with `.gitkeep`; they contain no implementations.
 No planning-conversation `PROJECT_HANDOFF.md` has been copied into the repository.
 
 ## Approval boundary

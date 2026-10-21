@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Step 3 automated testing foundation
+
+- Added fixed UTC clocks, Pacific midnight/DST scenarios and timer cleanup without Beam-expiration logic.
+- Added clearly labeled synthetic provider fixtures and separate reduced reconstructions of prior Stage A evidence; no live API tests were repeated.
+- Added in-memory HTTP, abort/timeout and monitoring delivery doubles, plus per-environment harness-isolation tests.
+- Extended network blocking to Node HTTP(S)/TCP/TLS entry points and fail-on-cleanup tracking. Added captured-console leak checks and a test-only allowlisted diagnostic recorder using synthetic credentials.
+- Added Node.js 24 type declarations for the test utilities. Preserved the seven Step 2 scaffold tests and left all application source, Wrangler configuration and approved requirements unchanged.
+
 ## Unreleased — Step 2 local scaffolding
 
 - Added a strict TypeScript Worker entry point, Wrangler configuration, locked development dependencies, and Vitest tests with global HTTP fetch blocked.
